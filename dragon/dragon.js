@@ -1,3 +1,5 @@
+var MAX_ITER = 16;
+
 /* Simple 2D point class. */
 var Point = function(x, y) {
   this.x = x;
@@ -26,6 +28,7 @@ function step (points) {
                    parseInt(i / 2) % 2 === 0 ? 1 : -1);
     points.splice(i, 0, newPoint);
   }
+  ++iter;
 }
 
 /* Regresses the fractal, decreasing the detail. */
@@ -36,6 +39,7 @@ function stepBack (points) {
   for (var i = 1; i < points.length; i++) {
     points.splice(i, 1);
   }
+  --iter;
 }
 
 /* Draws a segment of the fractal in the given color. */
@@ -79,12 +83,14 @@ var points = [new Point(c.width * 2 / 7, c.height * 2 / 5),
               new Point(c.width * 6 / 7, c.height * 2 / 5)];
 drawCurveWithColor(points, ctx, c);
 
+var iter = 0;
+
 // Key listener.
 document.addEventListener('keydown', function(event) {
-  if (event.keyCode === 39) {
+  if (event.keyCode === 39 && iter < MAX_ITER) {
     step(points);
     drawCurveWithColor(points, ctx, c);
-  } else if (event.keyCode === 37) {
+  } else if (event.keyCode === 37 && iter > 0) {
     stepBack(points);
     drawCurveWithColor(points, ctx, c);
   }
@@ -92,6 +98,8 @@ document.addEventListener('keydown', function(event) {
 
 // Mouse listener.
 c.addEventListener('click', function() {
-  step(points);
-  drawCurveWithColor(points, ctx, c);
+  if (iter < MAX_ITER) {
+    step(points);
+    drawCurveWithColor(points, ctx, c);
+  }
 });
