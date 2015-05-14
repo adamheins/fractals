@@ -104,8 +104,6 @@ var h = 0.866 * SIDE_LENGTH;
 canvas.width = SIDE_LENGTH;
 canvas.height = h;
 
-console.log(h);
-
 var a = new Point(0, h);
 var b = new Point(canvas.width, h);
 var c = new Point(canvas.width / 2, 0);
