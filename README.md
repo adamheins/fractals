@@ -1,14 +1,14 @@
 # Fractals
-A collection of fractals I've coded.
+A collection of fractals.
 
 ## Current
 The collection currently includes the following:
-* [Dragon Curve](http://adamheins.github.io/fractals/dragon/dragon.html)
-* [Sierpinski Triangle](http://adamheins.github.io/fractals/sierpinski/sierpinski.html)
-* [Mandelbrot Set](http://adamheins.github.io/fractals/mandelbrot/mandelbrot.html)
+* [Dragon Curve](https://adamheins.com/projects/fractals/dragon/dragon.html)
+* [Sierpinski Triangle](https://adamheins.com/projects/fractals/sierpinski/sierpinski.html)
+* [Mandelbrot Set](https://adamheins.com/projects/fractals/mandelbrot/mandelbrot.html)
 
-## Potential
-These fractals are will potentially be added in the future:
+## Planned
+These fractals will potentially be added in the future:
 * Koch Snowflake
 
 ## License
