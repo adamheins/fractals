@@ -3,7 +3,6 @@ var MAX_ITERATIONS = 500;
 function makePalette() {
     var palette = [];
     for(var i = 0; i < MAX_ITERATIONS; ++i) {
-        //palette.push(('#' + '00000' + i.toString(16)).slice(-7));
         var value = Math.floor(Math.sqrt(i) * 255 / Math.sqrt(MAX_ITERATIONS));
         palette.push('rgb(' + value + ',' + value + ',' + value + ')');
     }
@@ -55,8 +54,17 @@ Mandelbrot.prototype.draw = function(ctx) {
     }
 }
 
-var canvas = document.getElementById('mandelbrot');
-var ctx = canvas.getContext('2d');
+function init() {
+    var canvas = document.getElementById('mandelbrot');
+    var ctx = canvas.getContext('2d');
 
-var mandelbrot = new Mandelbrot(0, 0, canvas.width, canvas.height);
-mandelbrot.draw(ctx);
+    var mandelbrot = new Mandelbrot(0, 0, canvas.width, canvas.height);
+    mandelbrot.draw(ctx);
+}
+
+var launchButton = document.getElementById('launch');
+launchButton.addEventListener('click', function() {
+    launchButton.style.display = 'none';
+    init();
+});
+
