@@ -1,4 +1,7 @@
+'use strict';
+
 var MAX_ITERATIONS = 500;
+var BAILOUT_RADIUS = 1 << 16;
 
 function makePalette() {
     var palette = [];
@@ -6,8 +9,11 @@ function makePalette() {
         var value = Math.floor(Math.sqrt(i) * 255 / Math.sqrt(MAX_ITERATIONS));
         palette.push('rgb(' + value + ',' + value + ',' + value + ')');
     }
-    console.log(palette);
     return palette;
+}
+
+function interpolate(a, b, fraction) {
+    return a + (b - a) * fraction;
 }
 
 function Mandelbrot(x, y, w, h) {
@@ -16,33 +22,42 @@ function Mandelbrot(x, y, w, h) {
     this.w = w;
     this.h = h;
 
-    this.palette = makePalette();
-}
+    this.offsetX = 0;
+    this.offsetY = 0;
 
-function interpolate(a, b, fraction) {
-    return a + (b - a) * fraction;
+    this.magnification = 1;
 }
 
 Mandelbrot.prototype.plot = function(xP, yP, ctx) {
     // Scale coordinates to lie within the Mandelbrot scale.
-    var x0 = xP * 3.5 / this.w - 2.5;
-    var y0 = yP * 2.0 / this.h - 1.0;
+    var x0 = xP * 3.5 / this.magnification / this.w - 2.5 + this.offsetX;
+    var y0 = yP * 2.0 / this.magnification / this.h - 1.0 + this.offsetY;
 
     var x = 0;
     var y = 0;
 
     // The number of iterations we reach determines the color of the pixel.
-    // Higher iterations generally have more intense colors.
     var iter = 0;
-    while (x * x + y * y < 4 && iter < MAX_ITERATIONS) {
+    while (x * x + y * y < BAILOUT_RADIUS && iter < MAX_ITERATIONS) {
         var xTemp = x * x - y * y + x0;
         y = 2 * x * y + y0;
         x = xTemp;
         ++iter;
     }
 
+    if (iter < MAX_ITERATIONS) {
+      var log_zn = Math.log10(x * x + y * y) / 2;
+      var nu = Math.log10(log_zn / Math.log10(2)) / Math.log10(2);
+      iter = iter + 1 - nu;
+    }
+
+    var a = Math.floor(Math.sqrt(Math.floor(iter)) * 255 / Math.sqrt(MAX_ITERATIONS));
+    var b = Math.floor(Math.sqrt(Math.floor(iter) + 1) * 255 / Math.sqrt(MAX_ITERATIONS));
+    var c = Math.floor(interpolate(a, b, iter % 1));
+    var color = 'rgb(' + c + ',' + c + ',' + c + ')';
+
     // Draw the pixel.
-    ctx.fillStyle = this.palette[iter - 1];
+    ctx.fillStyle = color;
     ctx.fillRect(xP, yP, 1, 1);
 }
 
@@ -54,17 +69,29 @@ Mandelbrot.prototype.draw = function(ctx) {
     }
 }
 
-function init() {
-    var canvas = document.getElementById('mandelbrot');
-    var ctx = canvas.getContext('2d');
-
-    var mandelbrot = new Mandelbrot(0, 0, canvas.width, canvas.height);
-    mandelbrot.draw(ctx);
+Mandelbrot.prototype.zoom = function(magnification) {
+  this.magnification = magnification;
 }
 
+var canvas = document.getElementById('mandelbrot');
+var ctx = canvas.getContext('2d');
 var launchButton = document.getElementById('launch');
-launchButton.addEventListener('click', function() {
+
+var mandelbrot = new Mandelbrot(0, 0, canvas.width, canvas.height);
+
+canvas.addEventListener('click', (e) => {
+    mandelbrot.magnification += 1;
+
+    var offsetX = e.offsetX - mandelbrot.w / 2;
+    var offsetY = e.offsetY - mandelbrot.h / 2;
+
+    mandelbrot.offsetX += offsetX * 3.5 / mandelbrot.magnification / mandelbrot.w;
+    mandelbrot.offsetY += offsetY * 2.0 / mandelbrot.magnification / mandelbrot.h;
+    mandelbrot.draw(ctx);
+});
+
+launchButton.addEventListener('click', () => {
     launchButton.style.display = 'none';
-    init();
+    mandelbrot.draw(ctx);
 });
 
