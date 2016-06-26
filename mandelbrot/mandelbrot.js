@@ -22,16 +22,19 @@ function Mandelbrot(x, y, w, h) {
     this.w = w;
     this.h = h;
 
-    this.offsetX = 0;
-    this.offsetY = 0;
+    this.offsetX = -2.5;
+    this.offsetY = -1.0;
+
+    this.offsetXP = 0;
+    this.offsetYP = 0;
 
     this.magnification = 1;
 }
 
 Mandelbrot.prototype.plot = function(xP, yP, ctx) {
     // Scale coordinates to lie within the Mandelbrot scale.
-    var x0 = xP * 3.5 / this.magnification / this.w - 2.5 + this.offsetX;
-    var y0 = yP * 2.0 / this.magnification / this.h - 1.0 + this.offsetY;
+    var x0 = (xP) * 3.5 / this.magnification / this.w + this.offsetX;
+    var y0 = (yP) * 2.0 / this.magnification / this.h + this.offsetY;
 
     var x = 0;
     var y = 0;
@@ -51,8 +54,8 @@ Mandelbrot.prototype.plot = function(xP, yP, ctx) {
       iter = iter + 1 - nu;
     }
 
-    var a = Math.floor(Math.sqrt(Math.floor(iter)) * 255 / Math.sqrt(MAX_ITERATIONS));
-    var b = Math.floor(Math.sqrt(Math.floor(iter) + 1) * 255 / Math.sqrt(MAX_ITERATIONS));
+    var a = Math.floor(Math.cbrt(Math.floor(iter)) * 255 / Math.cbrt(MAX_ITERATIONS));
+    var b = Math.floor(Math.cbrt(Math.floor(iter) + 1) * 255 / Math.cbrt(MAX_ITERATIONS));
     var c = Math.floor(interpolate(a, b, iter % 1));
     var color = 'rgb(' + c + ',' + c + ',' + c + ')';
 
@@ -80,13 +83,17 @@ var launchButton = document.getElementById('launch');
 var mandelbrot = new Mandelbrot(0, 0, canvas.width, canvas.height);
 
 canvas.addEventListener('click', (e) => {
-    mandelbrot.magnification += 1;
+    mandelbrot.magnification *= 1.5;
 
     var offsetX = e.offsetX - mandelbrot.w / 2;
     var offsetY = e.offsetY - mandelbrot.h / 2;
 
     mandelbrot.offsetX += offsetX * 3.5 / mandelbrot.magnification / mandelbrot.w;
     mandelbrot.offsetY += offsetY * 2.0 / mandelbrot.magnification / mandelbrot.h;
+
+    mandelbrot.offsetXP = offsetX;
+    mandelbrot.offsetYP = offsetY;
+
     mandelbrot.draw(ctx);
 });
 
