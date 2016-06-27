@@ -1,20 +1,8 @@
 'use strict';
 
-var MAX_ITERATIONS = 500;
-var BAILOUT_RADIUS = 1 << 16;
-
-function makePalette() {
-    var palette = [];
-    for(var i = 0; i < MAX_ITERATIONS; ++i) {
-        var value = Math.floor(Math.sqrt(i) * 255 / Math.sqrt(MAX_ITERATIONS));
-        palette.push('rgb(' + value + ',' + value + ',' + value + ')');
-    }
-    return palette;
-}
-
-function interpolate(a, b, fraction) {
-    return a + (b - a) * fraction;
-}
+let DELTA_ITERATIONS = 500;
+let BAILOUT_RADIUS = 1 << 16;
+let MAGNIFICATION_STEP = 1.5;
 
 function Mandelbrot(x, y, w, h) {
     this.x = x;
@@ -22,125 +10,117 @@ function Mandelbrot(x, y, w, h) {
     this.w = w;
     this.h = h;
 
+    this.maxIterations = DELTA_ITERATIONS;
+
     this.offsetX = -2.5;
     this.offsetY = -1.0;
-
-    this.offsetXP = 0;
-    this.offsetYP = 0;
 
     this.magnification = 1;
 }
 
-Mandelbrot.prototype.plot = function(xP, yP, ctx, minIter, maxIter) {
-    // Scale coordinates to lie within the Mandelbrot scale.
-    var x0 = (xP) * 3.5 / this.magnification / this.w + this.offsetX;
-    var y0 = (yP) * 2.0 / this.magnification / this.h + this.offsetY;
-
-    var x = 0;
-    var y = 0;
-
-    // The number of iterations we reach determines the color of the pixel.
-    var iter = 0;
-    while (x * x + y * y < BAILOUT_RADIUS && iter < MAX_ITERATIONS) {
-        var xTemp = x * x - y * y + x0;
-        y = 2 * x * y + y0;
-        x = xTemp;
-        ++iter;
+// Call function f on each point in the set.
+Mandelbrot.prototype.eachPoint = function(f) {
+    for (let i = this.x; i < this.w + this.x; ++i) {
+        for (let j = this.y; j < this.h + this.y; ++j) {
+            f(i, j);
+        }
     }
-
-    if (iter < MAX_ITERATIONS) {
-      var log_zn = Math.log10(x * x + y * y) / 2;
-      var nu = Math.log10(log_zn / Math.log10(2)) / Math.log10(2);
-      iter = iter + 1 - nu;
-    }
-
-    var a = Math.floor(Math.sqrt(iter - minIter) * 255 / Math.sqrt(maxIter - minIter));
-    var b = Math.floor(Math.sqrt(iter - minIter) * 255 / Math.sqrt(maxIter - minIter));
-    var c = Math.floor(interpolate(a, b, iter % 1));
-    var color = 'rgb(' + c + ',' + c + ',' + c + ')';
-
-    // Draw the pixel.
-    ctx.fillStyle = color;
-    ctx.fillRect(xP, yP, 1, 1);
 }
 
-Mandelbrot.prototype.findIter = function(xP, yP, ctx) {
-    // Scale coordinates to lie within the Mandelbrot scale.
-    var x0 = (xP) * 3.5 / this.magnification / this.w + this.offsetX;
-    var y0 = (yP) * 2.0 / this.magnification / this.h + this.offsetY;
+// Calculate the color for the given iteration values.
+Mandelbrot.prototype.getColorAt = function(iter, minIter, maxIter) {
+    let hue = Math.floor(Math.sqrt(iter - minIter) / Math.sqrt(maxIter - minIter) * 255);
+    return 'rgb(' + hue + ',' + hue + ',' + hue + ')';
+}
 
-    var x = 0;
-    var y = 0;
+// Calculate the number of iterations a given point passes.
+Mandelbrot.prototype.getIterationsAt = function(xP, yP) {
+    // Scale coordinates to lie within the Mandelbrot scale.
+    let x0 = xP * 3.5 / this.magnification / this.w + this.offsetX;
+    let y0 = yP * 2.0 / this.magnification / this.h + this.offsetY;
+
+    let x = 0;
+    let y = 0;
 
     // The number of iterations we reach determines the color of the pixel.
-    var iter = 0;
-    while (x * x + y * y < BAILOUT_RADIUS && iter < MAX_ITERATIONS) {
-        var xTemp = x * x - y * y + x0;
+    let iter = 0;
+    while (x * x + y * y < BAILOUT_RADIUS && iter < this.maxIterations) {
+        let xTemp = x * x - y * y + x0;
         y = 2 * x * y + y0;
         x = xTemp;
         ++iter;
     }
 
-    if (iter < MAX_ITERATIONS) {
-      var log_zn = Math.log10(x * x + y * y) / 2;
-      var nu = Math.log10(log_zn / Math.log10(2)) / Math.log10(2);
-      iter = iter + 1 - nu;
+    // Normalize the iterations to provide smoother coloring.
+    if (iter < this.maxIterations) {
+        let logZn = Math.log(x * x + y * y) / 2;
+        let nu = Math.log(logZn / Math.log(2)) / Math.log(2);
+        iter = iter + 1 - nu;
     }
 
     return iter;
 }
 
+// Draw a point in the set.
+Mandelbrot.prototype.plot = function(ctx, xP, yP, color) {
+    ctx.fillStyle = color;
+    ctx.fillRect(xP, yP, 1, 1);
+}
 
+// Render the entire fractal.
 Mandelbrot.prototype.draw = function(ctx) {
-    var minIter = MAX_ITERATIONS;
-    var maxIter = 0;
-    for (var i = this.x; i < this.w + this.x; ++i) {
-        for (var j = this.y; j < this.h + this.y; ++j) {
-            let iter = this.findIter(i, j, ctx);
-            if (iter < minIter) {
-                minIter = iter;
-            } else if (iter > maxIter) {
-                maxIter = iter;
-            }
-        }
-    }
+    let minIter = this.maxIterations;
+    let maxIter = 0;
 
-    console.log(minIter + ' ' + maxIter);
-
-    for (var i = this.x; i < this.w + this.x; ++i) {
-        for (var j = this.y; j < this.h + this.y; ++j) {
-            this.plot(i, j, ctx, minIter, maxIter);
+    // Find the minimum and maximum iterations required across all points in
+    // the set.
+    this.eachPoint((x, y) => {
+        let iter = this.getIterationsAt(x, y);
+        if (iter < minIter) {
+            minIter = iter;
+        } else if (iter > maxIter) {
+            maxIter = iter;
         }
-    }
+    });
+
+    // Update the max iterations used so that we always maintain a constant
+    // delta between min and max iterations.
+    this.maxIterations = DELTA_ITERATIONS + minIter;
+
+    // Draw each point in the set.
+    this.eachPoint((x, y) => {
+        let iter = this.getIterationsAt(x, y);
+        let color = this.getColorAt(iter, minIter, maxIter);
+        this.plot(ctx, x, y, color);
+    });
 }
 
-Mandelbrot.prototype.zoom = function(magnification) {
-  this.magnification = magnification;
+// Change the magnification of the fractal.
+Mandelbrot.prototype.magnify = function(multiplier) {
+  this.magnification *= multiplier;
 }
 
-var canvas = document.getElementById('mandelbrot');
-var ctx = canvas.getContext('2d');
-var launchButton = document.getElementById('launch');
+let canvas = document.getElementById('mandelbrot');
+let ctx = canvas.getContext('2d');
+let launchButton = document.getElementById('launch');
 
-var mandelbrot = new Mandelbrot(0, 0, canvas.width, canvas.height);
-
-canvas.addEventListener('click', (e) => {
-    mandelbrot.magnification *= 1.5;
-
-    var offsetX = e.offsetX - mandelbrot.w / 2;
-    var offsetY = e.offsetY - mandelbrot.h / 2;
-
-    mandelbrot.offsetX += offsetX * 3.5 / mandelbrot.magnification / mandelbrot.w;
-    mandelbrot.offsetY += offsetY * 2.0 / mandelbrot.magnification / mandelbrot.h;
-
-    mandelbrot.offsetXP = offsetX;
-    mandelbrot.offsetYP = offsetY;
-
-    mandelbrot.draw(ctx);
-});
+let mandelbrot = new Mandelbrot(0, 0, canvas.width, canvas.height);
 
 launchButton.addEventListener('click', () => {
     launchButton.style.display = 'none';
+
+    canvas.addEventListener('click', (e) => {
+        let offsetX = e.offsetX - mandelbrot.w / 2;
+        let offsetY = e.offsetY - mandelbrot.h / 2;
+
+        mandelbrot.offsetX += offsetX * 3.5 / mandelbrot.magnification / mandelbrot.w;
+        mandelbrot.offsetY += offsetY * 2.0 / mandelbrot.magnification / mandelbrot.h;
+
+        mandelbrot.magnify(MAGNIFICATION_STEP);
+
+        mandelbrot.draw(ctx);
+    });
+
     mandelbrot.draw(ctx);
 });
 
