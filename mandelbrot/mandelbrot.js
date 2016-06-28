@@ -4,6 +4,12 @@ let DELTA_ITERATIONS = 500;
 let BAILOUT_RADIUS = 1 << 16;
 let MAGNIFICATION_STEP = 1.5;
 
+let SCALE_FACTOR_X = 3.5;
+let SCALE_FACTOR_Y = 2.0;
+
+let INITIAL_OFFSET_X = -2.5;
+let INITIAL_OFFSET_Y = -1.0;
+
 function Mandelbrot(x, y, w, h) {
     this.x = x;
     this.y = y;
@@ -12,8 +18,8 @@ function Mandelbrot(x, y, w, h) {
 
     this.maxIterations = DELTA_ITERATIONS;
 
-    this.offsetX = -2.5;
-    this.offsetY = -1.0;
+    this.offsetX = INITIAL_OFFSET_X;
+    this.offsetY = INITIAL_OFFSET_Y;
 
     this.magnification = 1;
 }
@@ -31,15 +37,20 @@ Mandelbrot.prototype.eachPoint = function(f) {
 Mandelbrot.prototype.getColorAt = function(iter, minIter, maxIter) {
     let norm = iter - minIter;
     let range = maxIter - minIter;
-    let hue = Math.floor(Math.sqrt(norm / range) * 255);
-    return 'rgb(' + hue + ',' + hue + ',' + hue + ')';
+    let hue = Math.floor(Math.sqrt(norm / range) * 255 * 3);
+
+    if (hue <= 255) {
+        return 'rgb(' + hue + ',' + hue + ',' + hue + ')';
+    } else {
+        return 'rgb(255, 255, 255)';
+    }
 }
 
 // Calculate the number of iterations a given point passes.
 Mandelbrot.prototype.getIterationsAt = function(xP, yP) {
     // Scale coordinates to lie within the Mandelbrot scale.
-    let x0 = xP * 3.5 / this.magnification / this.w + this.offsetX;
-    let y0 = yP * 2.0 / this.magnification / this.h + this.offsetY;
+    let x0 = xP * SCALE_FACTOR_X / this.magnification / this.w + this.offsetX;
+    let y0 = yP * SCALE_FACTOR_Y / this.magnification / this.h + this.offsetY;
 
     let x = 0;
     let y = 0;
@@ -105,8 +116,8 @@ Mandelbrot.prototype.magnify = function(multiplier) {
 // Offset the image so that the center of image changes.
 Mandelbrot.prototype.offset = function(xOffsetCenter, yOffsetCenter) {
     // Scale offsets to mandelbrot scale and current magnification.
-    let xOffsetScaled = xOffsetCenter * 3.5 / this.magnification / this.w;
-    let yOffsetScaled = yOffsetCenter * 2.0 / this.magnification / this.h;
+    let xOffsetScaled = xOffsetCenter * SCALE_FACTOR_X / this.magnification / this.w;
+    let yOffsetScaled = yOffsetCenter * SCALE_FACTOR_Y / this.magnification / this.h;
 
     // Apply to existing offsets.
     this.offsetX += xOffsetScaled;
@@ -130,7 +141,17 @@ let canvas = document.getElementById('mandelbrot');
 let ctx = canvas.getContext('2d');
 let launchButton = document.getElementById('launch');
 
-let mandelbrot = new Mandelbrot(0, 0, canvas.width, canvas.height);
+let mandelbrot = new Mandelbrot(0, 0, window.innerWidth, window.innerHeight);
+
+window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    mandelbrot.w = window.innerWidth;
+    mandelbrot.f = window.innerHeight;
+
+    mandelbrot.draw(ctx);
+}, false);
 
 launchButton.addEventListener('click', () => {
     launchButton.style.display = 'none';
