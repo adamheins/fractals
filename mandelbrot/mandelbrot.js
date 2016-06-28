@@ -29,7 +29,9 @@ Mandelbrot.prototype.eachPoint = function(f) {
 
 // Calculate the color for the given iteration values.
 Mandelbrot.prototype.getColorAt = function(iter, minIter, maxIter) {
-    let hue = Math.floor(Math.sqrt(iter - minIter) / Math.sqrt(maxIter - minIter) * 255);
+    let norm = iter - minIter;
+    let range = maxIter - minIter;
+    let hue = Math.floor(Math.sqrt(norm / range) * 255);
     return 'rgb(' + hue + ',' + hue + ',' + hue + ')';
 }
 
@@ -100,6 +102,30 @@ Mandelbrot.prototype.magnify = function(multiplier) {
   this.magnification *= multiplier;
 }
 
+// Offset the image so that the center of image changes.
+Mandelbrot.prototype.offset = function(xOffsetCenter, yOffsetCenter) {
+    // Scale offsets to mandelbrot scale and current magnification.
+    let xOffsetScaled = xOffsetCenter * 3.5 / this.magnification / this.w;
+    let yOffsetScaled = yOffsetCenter * 2.0 / this.magnification / this.h;
+
+    // Apply to existing offsets.
+    this.offsetX += xOffsetScaled;
+    this.offsetY += yOffsetScaled;
+}
+
+// Magnify a specific point on the fractal. This is a more general case of the
+// magnify method, which magnifies at the center of the fractal.
+Mandelbrot.prototype.magnifyAt = function(multiplier, x, y) {
+    // First, we adjust the offset so the desired point of magnification is at
+    // the center of the image. Next, the image is magnified. Finally, we
+    // reverse the offset performed at first to return the point of interest to
+    // its original location, automatically taking the new magnification into
+    // account.
+    this.offset(x, y);
+    this.magnify(multiplier);
+    this.offset(-x, -y);
+}
+
 let canvas = document.getElementById('mandelbrot');
 let ctx = canvas.getContext('2d');
 let launchButton = document.getElementById('launch');
@@ -110,14 +136,7 @@ launchButton.addEventListener('click', () => {
     launchButton.style.display = 'none';
 
     canvas.addEventListener('click', (e) => {
-        let offsetX = e.offsetX - mandelbrot.w / 2;
-        let offsetY = e.offsetY - mandelbrot.h / 2;
-
-        mandelbrot.offsetX += offsetX * 3.5 / mandelbrot.magnification / mandelbrot.w;
-        mandelbrot.offsetY += offsetY * 2.0 / mandelbrot.magnification / mandelbrot.h;
-
-        mandelbrot.magnify(MAGNIFICATION_STEP);
-
+        mandelbrot.magnifyAt(MAGNIFICATION_STEP, e.offsetX, e.offsetY);
         mandelbrot.draw(ctx);
     });
 
