@@ -1,15 +1,26 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <title>Mandelbrot Set</title>
-        <link rel="stylesheet" href="mandelbrot.css">
-    </head>
-    <body>
-        <div>
-          <button id="launch">Launch</button>
-        </div>
-        <canvas id="mandelbrot"></canvas>
-        <script src="mandelbrot.js"></script>
-    </body>
+  <head>
+    <title>Mandelbrot Set</title>
+    <link rel="stylesheet" href="mandelbrot.css">
+  </head>
+  <body>
+    <div id="intro">
+      <h1>Mandelbrot Set</h1>
+      <p>
+      The <a href="https://en.wikipedia.org/wiki/Mandelbrot_set">Mandelbrot Set</a>,
+      named after <a href="https://en.wikipedia.org/wiki/Benoit_Mandelbrot">Benoit Mandelbrot</a>,
+      is a set of points in the complex plane that exhibits fractal behaviour.
+      </p>
+      <p>
+      To launch a rendering of the Mandelbrot Set, click the launch button. Be
+      warned, it can take several seconds to render the image. Click to move
+      around and use the mousewheel to zoom.
+      </p>
+      <button id="launch">Launch</button>
+    </div>
+    <canvas id="mandelbrot"></canvas>
+    <script src="mandelbrot.js"></script>
+  </body>
 </html>
 

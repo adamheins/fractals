@@ -7,6 +7,7 @@ let REVERSE_MAGNIFICATION_STEP = 1 / MAGNIFICATION_STEP;
 
 let SCALE_FACTOR_X = 3.5;
 let SCALE_FACTOR_Y = 2.0;
+let ASPECT_RATIO = SCALE_FACTOR_X / SCALE_FACTOR_Y;
 
 let INITIAL_OFFSET_X = -2.5;
 let INITIAL_OFFSET_Y = -1.0;
@@ -40,13 +41,16 @@ Mandelbrot.prototype.getColorAt = function(iter, minIter, maxIter) {
     let range = maxIter - minIter;
     let scale = Math.floor(Math.sqrt(norm / range) * 255 * 3);
 
+    // Palette algorithm.
     if (scale < 255 * 2) {
+        // Go from black to blue toward white
         let b = scale < 255 ? scale : 255;
-        let rg = Math.floor(b / 4);
+        let rg = Math.floor(scale / 4);
         return 'rgb(' + rg + ',' + rg + ',' + b + ')';
     } else if (scale < 255 * 3 - 1) {
-        let rg = Math.floor((scale - 255 * 2) / 2);
-        return 'rgb(' + rg + ',' + rg + ',' + 255 + ')';
+        // Transition to back to black.
+        let rg = Math.floor(255 / 2 - (scale - 255 * 2) / 3);
+        return 'rgb(' + rg + ',' + rg + ',' + rg * 2 + ')';
     } else {
         return 'rgb(0, 0, 0)';
     }
@@ -135,7 +139,7 @@ Mandelbrot.prototype.draw = function(ctx) {
 
 // Change the magnification of the fractal.
 Mandelbrot.prototype.magnify = function(multiplier) {
-  this.magnification *= multiplier;
+    this.magnification *= multiplier;
 }
 
 // Offset the image so that the center of image changes.
@@ -162,10 +166,23 @@ Mandelbrot.prototype.magnifyAt = function(multiplier, x, y) {
     this.offset(-x, -y);
 }
 
+// Fit the Mandelbrot within a given width and height, maintaining a desired
+// aspect ratio.
+Mandelbrot.prototype.fit = function(width, height) {
+    // Desired aspect ratio is SCALE_FACTOR_X by SCALE_FACTOR_Y.
+    if (width < ASPECT_RATIO * height) {
+        this.w = width;
+        this.h = Math.floor(width / ASPECT_RATIO);
+    } else {
+        this.w = Math.floor(height * ASPECT_RATIO);
+        this.h = height;
+    }
+}
 
 let canvas = document.getElementById('mandelbrot');
 let ctx = canvas.getContext('2d');
 let launchButton = document.getElementById('launch');
+let intro = document.getElementById('intro');
 
 let mandelbrot = new Mandelbrot(0, 0, window.innerWidth, window.innerHeight);
 
@@ -174,8 +191,7 @@ function render() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    mandelbrot.w = window.innerWidth;
-    mandelbrot.f = window.innerHeight;
+    mandelbrot.fit(window.innerWidth, window.innerHeight);
 
     mandelbrot.draw(ctx);
 }
@@ -183,19 +199,24 @@ function render() {
 window.addEventListener('resize', render, false);
 
 launchButton.addEventListener('click', () => {
-    launchButton.style.display = 'none';
+    intro.style.display = 'none';
 
+    // Clicking the fractal causes that point to be moved to the center.
     canvas.addEventListener('click', (e) => {
-        mandelbrot.magnifyAt(MAGNIFICATION_STEP, e.offsetX, e.offsetY);
+        let offsetX = e.offsetX - mandelbrot.w / 2;
+        let offsetY = e.offsetY - mandelbrot.h / 2;
+        mandelbrot.offset(offsetX, offsetY);
         mandelbrot.draw(ctx);
     });
 
+    // Zooming in and out is done with the mousewheel.
     canvas.addEventListener('mousewheel', (e) => {
         if (e.wheelDelta > 0) {
             mandelbrot.magnifyAt(MAGNIFICATION_STEP, e.offsetX, e.offsetY);
             mandelbrot.draw(ctx);
         } else {
-            mandelbrot.magnifyAt(REVERSE_MAGNIFICATION_STEP, e.offsetX, e.offsetY);
+            mandelbrot.magnifyAt(REVERSE_MAGNIFICATION_STEP, e.offsetX,
+                                 e.offsetY);
             mandelbrot.draw(ctx);
         }
     });
