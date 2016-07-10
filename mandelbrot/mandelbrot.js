@@ -3,6 +3,7 @@
 let DELTA_ITERATIONS = 500;
 let BAILOUT_RADIUS = 1 << 16;
 let MAGNIFICATION_STEP = 1.5;
+let REVERSE_MAGNIFICATION_STEP = 1 / MAGNIFICATION_STEP;
 
 let SCALE_FACTOR_X = 3.5;
 let SCALE_FACTOR_Y = 2.0;
@@ -37,12 +38,17 @@ Mandelbrot.prototype.eachPoint = function(f) {
 Mandelbrot.prototype.getColorAt = function(iter, minIter, maxIter) {
     let norm = iter - minIter;
     let range = maxIter - minIter;
-    let hue = Math.floor(Math.sqrt(norm / range) * 255 * 3);
+    let scale = Math.floor(Math.sqrt(norm / range) * 255 * 3);
 
-    if (hue <= 255) {
-        return 'rgb(' + hue + ',' + hue + ',' + hue + ')';
+    if (scale < 255 * 2) {
+        let b = scale < 255 ? scale : 255;
+        let rg = Math.floor(b / 4);
+        return 'rgb(' + rg + ',' + rg + ',' + b + ')';
+    } else if (scale < 255 * 3 - 1) {
+        let rg = Math.floor((scale - 255 * 2) / 2);
+        return 'rgb(' + rg + ',' + rg + ',' + 255 + ')';
     } else {
-        return 'rgb(255, 255, 255)';
+        return 'rgb(0, 0, 0)';
     }
 }
 
@@ -57,10 +63,29 @@ Mandelbrot.prototype.getIterationsAt = function(xP, yP) {
 
     // The number of iterations we reach determines the color of the pixel.
     let iter = 0;
+
+    // First, we can check if the point lies within either of the two main
+    // bulbs, indicating that it is in the set.
+    let a = x0 - 0.25;
+    let q = a * a + y0 * y0;
+    if ((q * (q + a)) < 0.25 * y0 * y0) {
+      iter = this.maxIterations;
+    }
+
+    // Escape time algorithm.
     while (x * x + y * y < BAILOUT_RADIUS && iter < this.maxIterations) {
         let xTemp = x * x - y * y + x0;
-        y = 2 * x * y + y0;
+        let yTemp = 2 * x * y + y0;
+
+        // Check if the previous iteration yields the same value as this one.
+        // If so, we know this point is part of the set.
+        if (x === xTemp && y === yTemp) {
+          iter = this.maxIterations;
+          break;
+        }
+
         x = xTemp;
+        y = yTemp;
         ++iter;
     }
 
@@ -159,6 +184,16 @@ launchButton.addEventListener('click', () => {
     canvas.addEventListener('click', (e) => {
         mandelbrot.magnifyAt(MAGNIFICATION_STEP, e.offsetX, e.offsetY);
         mandelbrot.draw(ctx);
+    });
+
+    canvas.addEventListener('mousewheel', (e) => {
+        if (e.wheelDelta > 0) {
+            mandelbrot.magnifyAt(MAGNIFICATION_STEP, e.offsetX, e.offsetY);
+            mandelbrot.draw(ctx);
+        } else {
+            mandelbrot.magnifyAt(REVERSE_MAGNIFICATION_STEP, e.offsetX, e.offsetY);
+            mandelbrot.draw(ctx);
+        }
     });
 
     mandelbrot.draw(ctx);
