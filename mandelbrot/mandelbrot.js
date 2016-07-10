@@ -162,13 +162,15 @@ Mandelbrot.prototype.magnifyAt = function(multiplier, x, y) {
     this.offset(-x, -y);
 }
 
+
 let canvas = document.getElementById('mandelbrot');
 let ctx = canvas.getContext('2d');
 let launchButton = document.getElementById('launch');
 
 let mandelbrot = new Mandelbrot(0, 0, window.innerWidth, window.innerHeight);
 
-window.addEventListener('resize', () => {
+// Update dimensions and draw the fractal.
+function render() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
@@ -176,7 +178,9 @@ window.addEventListener('resize', () => {
     mandelbrot.f = window.innerHeight;
 
     mandelbrot.draw(ctx);
-}, false);
+}
+
+window.addEventListener('resize', render, false);
 
 launchButton.addEventListener('click', () => {
     launchButton.style.display = 'none';
@@ -196,6 +200,6 @@ launchButton.addEventListener('click', () => {
         }
     });
 
-    mandelbrot.draw(ctx);
+    render();
 });
 
