@@ -48,9 +48,10 @@ Mandelbrot.prototype.getColorAt = function(iter, minIter, maxIter) {
         let rg = Math.floor(scale / 4);
         return 'rgb(' + rg + ',' + rg + ',' + b + ')';
     } else if (scale < 255 * 3 - 1) {
-        // Transition to back to black.
+        // Transition back toward black.
         let rg = Math.floor(255 / 2 - (scale - 255 * 2) / 3);
-        return 'rgb(' + rg + ',' + rg + ',' + rg * 2 + ')';
+        let b = rg * 2;
+        return 'rgb(' + rg + ',' + rg + ',' + b + ')';
     } else {
         return 'rgb(0, 0, 0)';
     }
@@ -125,16 +126,16 @@ Mandelbrot.prototype.draw = function(ctx) {
         }
     });
 
-    // Update the max iterations used so that we always maintain a constant
-    // delta between min and max iterations.
-    this.maxIterations = DELTA_ITERATIONS + minIter;
-
     // Draw each point in the set.
     this.eachPoint((x, y) => {
         let iter = this.getIterationsAt(x, y);
         let color = this.getColorAt(iter, minIter, maxIter);
         this.plot(ctx, x, y, color);
     });
+
+    // Update the max iterations used so that we always maintain a constant
+    // delta between min and max iterations.
+    this.maxIterations = DELTA_ITERATIONS + minIter;
 }
 
 // Change the magnification of the fractal.
@@ -166,6 +167,13 @@ Mandelbrot.prototype.magnifyAt = function(multiplier, x, y) {
     this.offset(-x, -y);
 }
 
+// Magnify the Mandelbrot fractal at the currently-displayed center.
+Mandelbrot.prototype.magnifyCenter = function(multiplier) {
+    let xC = mandelbrot.w / 2;
+    let yC = mandelbrot.h / 2;
+    mandelbrot.magnifyAt(MAGNIFICATION_STEP, xC, yC);
+}
+
 // Fit the Mandelbrot within a given width and height, maintaining a desired
 // aspect ratio.
 Mandelbrot.prototype.fit = function(width, height) {
@@ -181,25 +189,23 @@ Mandelbrot.prototype.fit = function(width, height) {
 
 let canvas = document.getElementById('mandelbrot');
 let ctx = canvas.getContext('2d');
-let launchButton = document.getElementById('launch');
-let intro = document.getElementById('intro');
 
 let mandelbrot = new Mandelbrot(0, 0, window.innerWidth, window.innerHeight);
 
 // Update dimensions and draw the fractal.
 function render() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
     mandelbrot.fit(window.innerWidth, window.innerHeight);
+    canvas.width = mandelbrot.w;
+    canvas.height = mandelbrot.h;
 
     mandelbrot.draw(ctx);
 }
 
 window.addEventListener('resize', render, false);
 
-launchButton.addEventListener('click', () => {
-    intro.style.display = 'none';
+document.getElementById('launch').addEventListener('click', () => {
+    document.getElementById('intro').style.display = 'none';
+    document.getElementById('demo').style.display = 'block';
 
     // Clicking the fractal causes that point to be moved to the center.
     canvas.addEventListener('click', (e) => {
@@ -209,9 +215,14 @@ launchButton.addEventListener('click', () => {
         mandelbrot.draw(ctx);
     });
 
-    // Zooming in and out is done with the mousewheel.
-    canvas.addEventListener('mousewheel', (e) => {
-        if (e.wheelDelta > 0) {
+    // The mousewheel zooms in and out.
+    canvas.addEventListener('wheel', (e) => {
+        // We only care about scroll events in the vertical direction.
+        if (e.deltaY === 0) {
+            return;
+        }
+
+        if (e.deltaY < 0) {
             mandelbrot.magnifyAt(MAGNIFICATION_STEP, e.offsetX, e.offsetY);
             mandelbrot.draw(ctx);
         } else {
@@ -219,6 +230,21 @@ launchButton.addEventListener('click', () => {
                                  e.offsetY);
             mandelbrot.draw(ctx);
         }
+    });
+
+    document.getElementById('zoom-in').addEventListener('click', () => {
+        mandelbrot.magnifyCenter(MAGNIFICATION_STEP);
+        mandelbrot.draw(ctx);
+    });
+
+    document.getElementById('zoom-out').addEventListener('click', () => {
+        mandelbrot.magnifyCenter(REVERSE_MAGNIFICATION_STEP);
+        mandelbrot.draw(ctx);
+    });
+
+    document.getElementById('reset').addEventListener('click', () => {
+        mandelbrot = new Mandelbrot(0, 0, window.innerWidth, window.innerHeight);
+        render();
     });
 
     render();
