@@ -18,36 +18,28 @@ canvas {
   padding: 0;
 }
 
-button {
-  margin: 0px;
-  height: 25px;
-}
-
-#intro {
-  margin: 10px;
-}
-
 #demo {
   display: none;
 }
 
 .ctrl {
+  border: 1px solid;
+  background-color: white;
+  padding: 8px;
+  margin: 10px;
+  width: 100px;
+
   position: relative;
   left: 0px;
   top: 0px;
-  margin: 10px
 }
 
-.ctrl-row {
-  margin-top: 5px;
-  margin-bottom: 5px;
+.ctrl button {
+  display: block;
+  margin-bottom: 8px;
+  width: 100%
 }
 
-.ctrl-btn-half {
-  width: 25px;
+.ctrl button:last-child {
+  margin-bottom: 0;
 }
-
-.ctrl-btn-full {
-  width: 55px;
-}
-
