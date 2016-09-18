@@ -39,8 +39,9 @@ function stepOne(pointA, pointB, angle) {
     let point23 = new Point(pointA.x + dx * 2 / 3, pointA.y + dy * 2 / 3);
 
     // The point at the tip of the "spike".
-    let pointSpike = new Point(point12.x + length * Math.cos(angle) / 3,
-                               point12.y - length * Math.sin(angle) / 3);
+    let childHeight = length * Math.sqrt(3) / 6;
+    let pointSpike = new Point(point12.x + childHeight * Math.cos(angle),
+                               point12.y - childHeight * Math.sin(angle));
 
     // We've chosen to include `pointA` in the returned array of new points,
     // rather than `pointB`. It must be one or the other, not both, to avoid
