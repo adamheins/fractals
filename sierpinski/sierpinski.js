@@ -1,4 +1,6 @@
-var SIDE_LENGTH = 500;
+'use strict';
+
+let MARGIN = 10;
 
 // Depth to which the fractal recurses.
 var MAX_DEPTH = 10;
@@ -99,14 +101,9 @@ var ctx = canvas.getContext('2d');
 var color = new Color(255, 0, 0);
 var depth = MAX_DEPTH;
 
-var h = 0.866 * SIDE_LENGTH;
-
-canvas.width = SIDE_LENGTH;
-canvas.height = h;
-
-var a = new Point(0, h);
-var b = new Point(canvas.width, h);
-var c = new Point(canvas.width / 2, 0);
+var a = new Point(MARGIN, canvas.height - MARGIN);
+var b = new Point(canvas.width - MARGIN, canvas.height - MARGIN);
+var c = new Point(canvas.width / 2, MARGIN);
 
 var triangles = [new SierpinskiTriangle(a, b, c)];
 draw(triangles, ctx, color, depth);
