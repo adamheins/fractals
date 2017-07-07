@@ -8,9 +8,5 @@ The collection currently includes the following:
 * [Mandelbrot Set](https://adamheins.com/projects/fractals/mandelbrot/mandelbrot.html)
 * [Koch Snowflake](https://adamheins.com/projects/fractals/koch/koch.html)
 
-## (Possible) Future
-These fractals will potentially be added in the future:
-* Julia Set
-
 ## License
 MIT license. See the LICENSE file for details.
